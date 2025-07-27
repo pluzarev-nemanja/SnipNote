@@ -24,6 +24,9 @@
                     anchor="right"
                     factoryClass="com.example.notesplugin.toolwindow.SnipNoteToolWindowFactory"
                     icon="/META-INF/notes.svg"/>
+        <notificationGroup id="Simple Snippet Notifications"
+                            displayType="BALLOON"
+                            isLogByDefault="false"/>
     </extensions>
     <actions>
         <action id="SnipNote.AddSelectedSnippet"
@@ -34,4 +37,5 @@
             <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="CutCopyPasteGroup"/>
         </action>
     </actions>
+
 </idea-plugin>
