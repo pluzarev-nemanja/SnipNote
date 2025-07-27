@@ -1,8 +1,9 @@
 package com.example.notesplugin.toolwindow
 
 import com.example.notesplugin.domain.model.Snippet
-import com.example.notesplugin.presentation.model.CodeLanguage
-import com.example.notesplugin.presentation.model.PanelTabs
+import com.example.notesplugin.presentation.component.SavedNotesPanel
+import com.example.notesplugin.presentation.util.CodeLanguage
+import com.example.notesplugin.presentation.util.PanelTabs
 import com.example.notesplugin.service.SnippetService
 import com.example.notesplugin.util.MyNotifier
 import com.intellij.icons.AllIcons
@@ -47,6 +48,7 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
     private val pasteButton = JButton("Paste")
     private val insertToEditorButton = JButton("Insert to Editor")
     private val languageComboBox = ComboBox(CodeLanguage.entries.toTypedArray())
+    private var savedNotesPanel: SavedNotesPanel
 
     init {
         languageComboBox.renderer = object : ColoredListCellRenderer<CodeLanguage>() {
@@ -103,8 +105,18 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
         panel.add(buttonPanel, BorderLayout.SOUTH)
 
         val tabs = JTabbedPane()
+        tabs.addChangeListener {
+            if (tabs.selectedIndex == PanelTabs.SAVED_NOTES.ordinal) {
+                savedNotesPanel.refreshList()
+            }
+        }
         tabs.addTab(PanelTabs.EDITOR.title, AllIcons.Actions.Commit, panel)
-        tabs.addTab(PanelTabs.SAVED_NOTES.title,AllIcons.Actions.MenuPaste, createSavedNotesPanel())
+        savedNotesPanel = SavedNotesPanel(project) { snippet ->
+            titleField.text = snippet.title
+            snippetContentEditor.text = snippet.content
+            tabs.selectedIndex = PanelTabs.EDITOR.ordinal
+        }
+        tabs.addTab(PanelTabs.SAVED_NOTES.title, AllIcons.Actions.MenuPaste, savedNotesPanel)
 
         setContent(tabs)
         initListeners()
@@ -118,8 +130,6 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
 
         saveButton.addActionListener {
             val title = titleField.text
-            val content = snippetContentEditor.text
-
             if (title.isBlank()) {
                 MyNotifier.showNotification(
                     project,
@@ -128,9 +138,7 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
                 )
                 return@addActionListener
             }
-
-            val newSnippet = Snippet(title, content)
-            snippetService.addSnippet(newSnippet)
+            snippetService.addSnippet(Snippet(title, snippetContentEditor.text))
             MyNotifier.showNotification(project, message = "Snippet saved.", type = NotificationType.INFORMATION)
         }
 

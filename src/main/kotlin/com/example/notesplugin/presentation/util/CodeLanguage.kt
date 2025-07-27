@@ -1,4 +1,4 @@
-package com.example.notesplugin.presentation.model
+package com.example.notesplugin.presentation.util
 
 enum class CodeLanguage(val displayName: String, val fileExtension: String) {
     KOTLIN("Kotlin", "kt"),
