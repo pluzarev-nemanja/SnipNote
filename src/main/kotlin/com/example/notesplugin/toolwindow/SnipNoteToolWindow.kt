@@ -1,18 +1,29 @@
 package com.example.notesplugin.toolwindow
 
 import com.example.notesplugin.domain.model.Snippet
+import com.example.notesplugin.presentation.model.CodeLanguage
 import com.example.notesplugin.service.SnippetService
 import com.example.notesplugin.util.MyNotifier
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.colors.EditorColorsManager
+import com.intellij.openapi.editor.ex.EditorEx
+import com.intellij.openapi.editor.highlighter.EditorHighlighterFactory
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileTypes.FileTypeManager
+import com.intellij.openapi.fileTypes.UnknownFileType
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.SimpleToolWindowPanel
+import com.intellij.openapi.vfs.VfsUtilCore
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.ui.ColoredListCellRenderer
 import com.intellij.ui.EditorTextField
+import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
+import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
 import java.awt.FlowLayout
@@ -25,24 +36,46 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
 
     private val snippetService = project.getService(SnippetService::class.java)
 
-    private val snippetTitleField = JTextField()
     private var snippetContentEditor: EditorTextField
-
+    private val snippetTitleField = JTextField()
+    private val titleField = JBTextField()
+    private val panel = JBPanel<JBPanel<*>>(BorderLayout())
     private val saveButton = JButton("Save")
     private val copyButton = JButton("Copy")
     private val pasteButton = JButton("Paste")
     private val insertToEditorButton = JButton("Insert to Editor")
+    private val languageComboBox = ComboBox(CodeLanguage.entries.toTypedArray())
 
     init {
-        val panel = JBPanel<JBPanel<*>>(BorderLayout())
+        languageComboBox.renderer = object : ColoredListCellRenderer<CodeLanguage>() {
+            override fun customizeCellRenderer(
+                list: JList<out CodeLanguage>,
+                value: CodeLanguage?,
+                index: Int,
+                selected: Boolean,
+                hasFocus: Boolean
+            ) {
+                value?.let {
+                    append(it.displayName)
+                }
+            }
+        }
+        languageComboBox.selectedItem = detectProjectPrimaryLanguage(project)
 
-        val titlePanel = JBPanel<JBPanel<*>>(FlowLayout(FlowLayout.LEFT)).apply {
-            add(JLabel("Title:"))
-            add(snippetTitleField.apply { preferredSize = JBUI.size(200, 25) })
+        val titlePanel = JPanel(BorderLayout(5, 0)).apply {
+            add(JBLabel("Title:").apply {
+                border = JBUI.Borders.emptyLeft(10)
+            }, BorderLayout.WEST)
+            add(titleField, BorderLayout.CENTER)
+            add(languageComboBox, BorderLayout.EAST)
         }
 
         snippetContentEditor =
-            EditorTextField("", project, FileTypeManager.getInstance().getFileTypeByExtension("kt")).apply {
+            EditorTextField(
+                "",
+                project,
+                FileTypeManager.getInstance().getFileTypeByExtension(CodeLanguage.KOTLIN.fileExtension)
+            ).apply {
                 addSettingsProvider { editor ->
                     editor.isOneLineMode = false
                     editor.setCaretEnabled(true)
@@ -72,6 +105,11 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
     }
 
     private fun initListeners() {
+        languageComboBox.addActionListener {
+            val selectedLanguage = languageComboBox.selectedItem as? CodeLanguage ?: return@addActionListener
+            updateEditorHighlighter(selectedLanguage)
+        }
+
         saveButton.addActionListener {
             val title = snippetTitleField.text
             val content = snippetContentEditor.text
@@ -130,6 +168,38 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
                 )
             }
         }
+    }
+
+    private fun updateEditorHighlighter(language: CodeLanguage) {
+        val fileType = FileTypeManager.getInstance().getFileTypeByExtension(language.fileExtension)
+        val highlighter = EditorHighlighterFactory.getInstance()
+            .createEditorHighlighter(project, fileType)
+
+        (snippetContentEditor.editor as? EditorEx)?.highlighter = highlighter
+    }
+
+    fun detectProjectPrimaryLanguage(project: Project): CodeLanguage {
+        val fileTypeManager = FileTypeManager.getInstance()
+        val allFiles = mutableListOf<VirtualFile>()
+        ProjectRootManager.getInstance(project).contentRoots.forEach { root ->
+            VfsUtilCore.iterateChildrenRecursively(root, null) {
+                if (!it.isDirectory) allFiles.add(it)
+                true
+            }
+        }
+        val fileTypeCount = allFiles
+            .mapNotNull { it.fileType }
+            .groupingBy { it }
+            .eachCount()
+
+        val mostUsedFileType = fileTypeCount
+            .filter { it.key !is UnknownFileType }
+            .maxByOrNull { it.value }
+            ?.key ?: return CodeLanguage.KOTLIN
+
+        return CodeLanguage.values().find {
+            fileTypeManager.getFileTypeByExtension(it.fileExtension) == mostUsedFileType
+        } ?: CodeLanguage.KOTLIN
     }
 
     fun getContentPanel(): JComponent = this
