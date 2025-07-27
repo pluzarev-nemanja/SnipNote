@@ -1,29 +1,37 @@
-<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
     <id>com.example.NotesPlugin</id>
 
-    <!-- Public plugin name should be written in Title Case.
-         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
-    <name>NotesPlugin</name>
+    <name>SnipNote</name>
 
-    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor url="https://www.yourcompany.com">YourCompany</vendor>
+    <vendor url="https://www.nemanja.com">Nemanja Pluzarev</vendor>
 
-    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
-         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description><![CDATA[
-    Enter short description for your plugin here.<br>
-    <em>most HTML tags may be used</em>
-  ]]></description>
+  Boost your coding efficiency with **SnipNote**, a powerful plugin for IntelliJ IDEA and Android Studio. Tired of searching for that perfect piece of code you wrote last week? This plugin lets you:
+  <ul>
+    <li>⚡️ **Instantly save** any selected Kotlin or Java code snippet.</li>
+    <li>📚 **Build a personal library** of reusable code.</li>
+    <li>🔍 **Quickly find and paste** your snippets back into your projects.</li>
+  </ul>
+  Keep your best code organized and at your fingertips, streamlining your development workflow.
+]]></description>
 
-    <!-- Product and plugin compatibility requirements.
-         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+
     <depends>com.intellij.modules.platform</depends>
 
-    <!-- Extension points defined by the plugin.
-         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
-    <extensions defaultExtensionNs="com.intellij">
 
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow id="SnipNote"
+                    anchor="right"
+                    factoryClass="com.example.notesplugin.toolwindow.SnipNoteToolWindowFactory"
+                    icon="/META-INF/notes.svg"/>
     </extensions>
+    <actions>
+        <action id="SnipNote.AddSelectedSnippet"
+                class="com.example.notesplugin.action.AddSelectedSnippetAction"
+                text="Add to SnipNote"
+                description="Adds the currently selected code to your SnipNote collection."
+                icon="/META-INF/notes.svg">
+            <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="CutCopyPasteGroup"/>
+        </action>
+    </actions>
 </idea-plugin>
