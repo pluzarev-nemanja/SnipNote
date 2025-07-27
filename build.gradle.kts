@@ -33,7 +33,9 @@ intellijPlatform {
         }
 
         changeNotes = """
-      Initial version
+      Initial version of the SnipNote plugin with Jetpack Compose UI.
+      <br>
+      Easily save, organize, and paste your Kotlin and Java code snippets directly within the IDE.
     """.trimIndent()
     }
 }
