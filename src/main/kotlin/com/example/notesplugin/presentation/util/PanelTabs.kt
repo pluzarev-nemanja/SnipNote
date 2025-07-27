@@ -1,4 +1,4 @@
-package com.example.notesplugin.presentation.model
+package com.example.notesplugin.presentation.util
 
 enum class PanelTabs(val title: String) {
     EDITOR(title = "Editor"),

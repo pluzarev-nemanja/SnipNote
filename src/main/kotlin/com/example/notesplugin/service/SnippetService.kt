@@ -3,8 +3,8 @@ package com.example.notesplugin.service
 import com.example.notesplugin.domain.model.Snippet
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.State
+import com.intellij.openapi.components.Storage
 import com.intellij.openapi.project.Project
 import com.intellij.util.xmlb.XmlSerializerUtil
 import java.util.concurrent.CopyOnWriteArrayList
@@ -19,12 +19,13 @@ class SnippetService : PersistentStateComponent<SnippetService.State> {
     class State {
         var snippets: MutableList<Snippet> = CopyOnWriteArrayList()
     }
+
     private var myState: State = State()
 
 
     override fun getState(): SnippetService.State = myState
 
-    override fun loadState(p0: SnippetService.State) {
+    override fun loadState(state: SnippetService.State) {
         XmlSerializerUtil.copyBean(state, myState)
     }
 
