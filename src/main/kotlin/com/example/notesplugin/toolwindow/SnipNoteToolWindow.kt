@@ -2,8 +2,10 @@ package com.example.notesplugin.toolwindow
 
 import com.example.notesplugin.domain.model.Snippet
 import com.example.notesplugin.presentation.model.CodeLanguage
+import com.example.notesplugin.presentation.model.PanelTabs
 import com.example.notesplugin.service.SnippetService
 import com.example.notesplugin.util.MyNotifier
+import com.intellij.icons.AllIcons
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.colors.EditorColorsManager
@@ -26,6 +28,7 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
+import java.awt.Component
 import java.awt.FlowLayout
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
@@ -37,7 +40,6 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
     private val snippetService = project.getService(SnippetService::class.java)
 
     private var snippetContentEditor: EditorTextField
-    private val snippetTitleField = JTextField()
     private val titleField = JBTextField()
     private val panel = JBPanel<JBPanel<*>>(BorderLayout())
     private val saveButton = JButton("Save")
@@ -100,7 +102,11 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
         panel.add(JScrollPane(snippetContentEditor), BorderLayout.CENTER)
         panel.add(buttonPanel, BorderLayout.SOUTH)
 
-        setContent(panel)
+        val tabs = JTabbedPane()
+        tabs.addTab(PanelTabs.EDITOR.title, AllIcons.Actions.Commit, panel)
+        tabs.addTab(PanelTabs.SAVED_NOTES.title,AllIcons.Actions.MenuPaste, createSavedNotesPanel())
+
+        setContent(tabs)
         initListeners()
     }
 
@@ -111,7 +117,7 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
         }
 
         saveButton.addActionListener {
-            val title = snippetTitleField.text
+            val title = titleField.text
             val content = snippetContentEditor.text
 
             if (title.isBlank()) {
@@ -167,6 +173,45 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
                     type = NotificationType.ERROR
                 )
             }
+        }
+    }
+
+    private fun createSavedNotesPanel(): JPanel {
+        val listModel = DefaultListModel<Snippet>()
+        val snippets = SnippetService.getInstance(project).state.snippets
+        listModel.addAll(snippets)
+
+        val snippetList = JList(listModel).apply {
+            cellRenderer = object : JLabel(), ListCellRenderer<Snippet> {
+                override fun getListCellRendererComponent(
+                    list: JList<out Snippet>,
+                    value: Snippet,
+                    index: Int,
+                    isSelected: Boolean,
+                    cellHasFocus: Boolean
+                ): Component {
+                    text = value.title
+                    background = if (isSelected) list.selectionBackground else list.background
+                    foreground = if (isSelected) list.selectionForeground else list.foreground
+                    isOpaque = true
+                    return this
+                }
+            }
+        }
+
+        snippetList.selectionMode = ListSelectionModel.SINGLE_SELECTION
+
+        val openButton = JButton("Load Snippet").apply {
+            addActionListener {
+                val selected = snippetList.selectedValue ?: return@addActionListener
+                titleField.text = selected.title
+                snippetContentEditor.text = selected.content
+            }
+        }
+
+        return JPanel(BorderLayout()).apply {
+            add(JScrollPane(snippetList), BorderLayout.CENTER)
+            add(openButton, BorderLayout.SOUTH)
         }
     }
 
