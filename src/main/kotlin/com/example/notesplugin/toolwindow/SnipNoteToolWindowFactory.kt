@@ -11,7 +11,7 @@ class SnipNoteToolWindowFactory : ToolWindowFactory {
         toolWindow.contentManager.addContent(
             ContentFactory.getInstance().createContent(
                 SnipNoteToolWindow(project).getContentPanel(),
-                "Add Notes",
+                "Edit Note",
                 false
             )
         )
