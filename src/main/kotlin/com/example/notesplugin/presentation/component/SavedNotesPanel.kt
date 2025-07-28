@@ -1,6 +1,7 @@
 package com.example.notesplugin.presentation.component
 
 import com.example.notesplugin.domain.model.Snippet
+import com.example.notesplugin.presentation.renderer.SnippetCardRenderer
 import com.example.notesplugin.service.SnippetService
 import com.intellij.openapi.project.Project
 import java.awt.BorderLayout
@@ -13,21 +14,7 @@ class SavedNotesPanel(
 
     private val listModel = DefaultListModel<Snippet>()
     private val snippetList = JList(listModel).apply {
-        cellRenderer = object : JLabel(), ListCellRenderer<Snippet> {
-            override fun getListCellRendererComponent(
-                list: JList<out Snippet>,
-                value: Snippet,
-                index: Int,
-                isSelected: Boolean,
-                cellHasFocus: Boolean
-            ): java.awt.Component {
-                text = value.title
-                background = if (isSelected) list.selectionBackground else list.background
-                foreground = if (isSelected) list.selectionForeground else list.foreground
-                isOpaque = true
-                return this
-            }
-        }
+        cellRenderer = SnippetCardRenderer()
     }
     private val emptyLabel = JLabel("📭 No snippets saved yet.").apply {
         horizontalAlignment = JLabel.CENTER
