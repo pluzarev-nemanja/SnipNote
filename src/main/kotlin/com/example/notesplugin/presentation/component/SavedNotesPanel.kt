@@ -5,6 +5,7 @@ import com.example.notesplugin.presentation.renderer.SnippetCardRenderer
 import com.example.notesplugin.service.SnippetService
 import com.intellij.openapi.project.Project
 import java.awt.BorderLayout
+import java.awt.CardLayout
 import javax.swing.*
 
 class SavedNotesPanel(
@@ -14,41 +15,33 @@ class SavedNotesPanel(
 
     private val listModel = DefaultListModel<Snippet>()
     private val snippetList = JList(listModel).apply {
-        cellRenderer = SnippetCardRenderer()
+        cellRenderer = SnippetCardRenderer(project) { snippet ->
+            onSnippetSelected(snippet)
+        }
     }
     private val emptyLabel = JLabel("📭 No snippets saved yet.").apply {
         horizontalAlignment = JLabel.CENTER
         verticalAlignment = JLabel.CENTER
     }
     private val listScrollPane = JScrollPane(snippetList)
+    private val cardLayout = CardLayout()
+    private val container = JPanel(cardLayout)
 
     init {
-        snippetList.addListSelectionListener {
-            if (!it.valueIsAdjusting) {
-                snippetList.selectedValue?.let(onSnippetSelected)
-            }
-        }
+        container.add(emptyLabel, "empty")
+        container.add(listScrollPane, "list")
+        add(container, BorderLayout.CENTER)
     }
 
     fun refreshList() {
-        listModel.clear()
-        remove(listScrollPane)
-        remove(emptyLabel)
         val snippets = SnippetService.getInstance(project).state.snippets
-        if (snippets.isEmpty()) {
-            remove(listScrollPane)
-            add(emptyLabel, BorderLayout.CENTER)
-        } else {
-            remove(emptyLabel)
-            listModel.addAll(snippets)
-            add(listScrollPane, BorderLayout.CENTER)
-        }
 
-        revalidate()
-        repaint()
-    }
-    override fun addNotify() {
-        super.addNotify()
-        refreshList()
+        if (snippets.isEmpty()) {
+            cardLayout.show(container, "empty")
+        } else {
+            listModel.clear()
+            snippets.forEach { listModel.addElement(it) }
+            cardLayout.show(container, "list")
+        }
     }
 }

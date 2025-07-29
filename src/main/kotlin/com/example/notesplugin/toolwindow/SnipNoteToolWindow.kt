@@ -3,6 +3,7 @@ package com.example.notesplugin.toolwindow
 import com.example.notesplugin.domain.model.Snippet
 import com.example.notesplugin.presentation.component.SavedNotesPanel
 import com.example.notesplugin.presentation.util.CodeLanguage
+import com.example.notesplugin.presentation.util.CodeLanguageColors
 import com.example.notesplugin.presentation.util.PanelTabs
 import com.example.notesplugin.service.SnippetService
 import com.example.notesplugin.util.MyNotifier
@@ -105,11 +106,6 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
         panel.add(buttonPanel, BorderLayout.SOUTH)
 
         val tabs = JTabbedPane()
-        tabs.addChangeListener {
-            if (tabs.selectedIndex == PanelTabs.SAVED_NOTES.ordinal) {
-                savedNotesPanel.refreshList()
-            }
-        }
         tabs.addTab(PanelTabs.EDITOR.title, AllIcons.Actions.Commit, panel)
         savedNotesPanel = SavedNotesPanel(project) { snippet ->
             titleField.text = snippet.title
@@ -117,7 +113,11 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
             tabs.selectedIndex = PanelTabs.EDITOR.ordinal
         }
         tabs.addTab(PanelTabs.SAVED_NOTES.title, AllIcons.Actions.MenuPaste, savedNotesPanel)
-
+        tabs.addChangeListener {
+            if (tabs.selectedIndex == PanelTabs.SAVED_NOTES.ordinal) {
+                savedNotesPanel.refreshList()
+            }
+        }
         setContent(tabs)
         initListeners()
     }
@@ -138,7 +138,15 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
                 )
                 return@addActionListener
             }
-            snippetService.addSnippet(Snippet(title, snippetContentEditor.text))
+            val selectedLanguage = languageComboBox.selectedItem as? CodeLanguage
+            snippetService.addSnippet(
+                Snippet(
+                    title = title,
+                    content = snippetContentEditor.text,
+                    languageName = selectedLanguage?.displayName ?: "Unknown",
+                    languageColor = CodeLanguageColors.getColor(selectedLanguage ?: CodeLanguage.KOTLIN)
+                )
+            )
             MyNotifier.showNotification(project, message = "Snippet saved.", type = NotificationType.INFORMATION)
         }
 
