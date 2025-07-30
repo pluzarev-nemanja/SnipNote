@@ -30,7 +30,6 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
-import java.awt.Component
 import java.awt.FlowLayout
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
@@ -41,7 +40,7 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
 
     private val snippetService = project.getService(SnippetService::class.java)
 
-    private var snippetContentEditor: EditorTextField
+    private lateinit var snippetContentEditor: EditorTextField
     private val titleField = JBTextField()
     private val panel = JBPanel<JBPanel<*>>(BorderLayout())
     private val saveButton = JButton("Save")
@@ -49,9 +48,18 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
     private val pasteButton = JButton("Paste")
     private val insertToEditorButton = JButton("Insert to Editor")
     private val languageComboBox = ComboBox(CodeLanguage.entries.toTypedArray())
-    private var savedNotesPanel: SavedNotesPanel
+    private lateinit var savedNotesPanel: SavedNotesPanel
 
     init {
+        setupLanguageComboBox()
+        setupEditor()
+        setupButtons()
+        setupMainPanel()
+        setupTabs()
+        initListeners()
+    }
+
+    private fun setupLanguageComboBox() {
         languageComboBox.renderer = object : ColoredListCellRenderer<CodeLanguage>() {
             override fun customizeCellRenderer(
                 list: JList<out CodeLanguage>,
@@ -66,7 +74,39 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
             }
         }
         languageComboBox.selectedItem = detectProjectPrimaryLanguage(project)
+    }
 
+    private fun setupEditor() {
+        snippetContentEditor = EditorTextField(
+            "",
+            project,
+            FileTypeManager.getInstance().getFileTypeByExtension(CodeLanguage.KOTLIN.fileExtension)
+        ).apply {
+            addSettingsProvider { editor ->
+                editor.isOneLineMode = false
+                editor.setCaretEnabled(true)
+                editor.colorsScheme = EditorColorsManager.getInstance().globalScheme
+                editor.settings.apply {
+                    isLineNumbersShown = true
+                    isFoldingOutlineShown = true
+                    isUseSoftWraps = true
+                    isViewer = false
+                }
+            }
+        }
+    }
+
+    private fun setupButtons() {
+        val buttonPanel = JBPanel<JBPanel<*>>(FlowLayout(FlowLayout.RIGHT)).apply {
+            add(insertToEditorButton)
+            add(copyButton)
+            add(pasteButton)
+            add(saveButton)
+        }
+        panel.add(buttonPanel, BorderLayout.SOUTH)
+    }
+
+    private fun setupMainPanel() {
         val titlePanel = JPanel(BorderLayout(5, 0)).apply {
             add(JBLabel("Title:").apply {
                 border = JBUI.Borders.emptyLeft(10)
@@ -75,51 +115,28 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
             add(languageComboBox, BorderLayout.EAST)
         }
 
-        snippetContentEditor =
-            EditorTextField(
-                "",
-                project,
-                FileTypeManager.getInstance().getFileTypeByExtension(CodeLanguage.KOTLIN.fileExtension)
-            ).apply {
-                addSettingsProvider { editor ->
-                    editor.isOneLineMode = false
-                    editor.setCaretEnabled(true)
-                    editor.colorsScheme = EditorColorsManager.getInstance().globalScheme
-                    editor.settings.apply {
-                        isLineNumbersShown = true
-                        isFoldingOutlineShown = true
-                        isUseSoftWraps = true
-                        isViewer = false
-                    }
-                }
-            }
-
-        val buttonPanel = JBPanel<JBPanel<*>>(FlowLayout(FlowLayout.RIGHT)).apply {
-            add(insertToEditorButton)
-            add(copyButton)
-            add(pasteButton)
-            add(saveButton)
-        }
-
         panel.add(titlePanel, BorderLayout.NORTH)
         panel.add(JScrollPane(snippetContentEditor), BorderLayout.CENTER)
-        panel.add(buttonPanel, BorderLayout.SOUTH)
+    }
 
+    private fun setupTabs() {
         val tabs = JTabbedPane()
         tabs.addTab(PanelTabs.EDITOR.title, AllIcons.Actions.Commit, panel)
+
         savedNotesPanel = SavedNotesPanel(project) { snippet ->
             titleField.text = snippet.title
             snippetContentEditor.text = snippet.content
             tabs.selectedIndex = PanelTabs.EDITOR.ordinal
         }
         tabs.addTab(PanelTabs.SAVED_NOTES.title, AllIcons.Actions.MenuPaste, savedNotesPanel)
+
         tabs.addChangeListener {
             if (tabs.selectedIndex == PanelTabs.SAVED_NOTES.ordinal) {
                 savedNotesPanel.refreshList()
             }
         }
+
         setContent(tabs)
-        initListeners()
     }
 
     private fun initListeners() {
@@ -144,9 +161,11 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
                     title = title,
                     content = snippetContentEditor.text,
                     languageName = selectedLanguage?.displayName ?: "Unknown",
-                    languageColor = CodeLanguageColors.getColor(selectedLanguage ?: CodeLanguage.KOTLIN)
-                )
+                    languageColor = CodeLanguageColors
+                        .getColor(selectedLanguage ?: CodeLanguage.KOTLIN)
+                        .let { "#%02x%02x%02x".format(it.red, it.green, it.blue) })
             )
+            savedNotesPanel.refreshList()
             MyNotifier.showNotification(project, message = "Snippet saved.", type = NotificationType.INFORMATION)
         }
 
@@ -189,45 +208,6 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
                     type = NotificationType.ERROR
                 )
             }
-        }
-    }
-
-    private fun createSavedNotesPanel(): JPanel {
-        val listModel = DefaultListModel<Snippet>()
-        val snippets = SnippetService.getInstance(project).state.snippets
-        listModel.addAll(snippets)
-
-        val snippetList = JList(listModel).apply {
-            cellRenderer = object : JLabel(), ListCellRenderer<Snippet> {
-                override fun getListCellRendererComponent(
-                    list: JList<out Snippet>,
-                    value: Snippet,
-                    index: Int,
-                    isSelected: Boolean,
-                    cellHasFocus: Boolean
-                ): Component {
-                    text = value.title
-                    background = if (isSelected) list.selectionBackground else list.background
-                    foreground = if (isSelected) list.selectionForeground else list.foreground
-                    isOpaque = true
-                    return this
-                }
-            }
-        }
-
-        snippetList.selectionMode = ListSelectionModel.SINGLE_SELECTION
-
-        val openButton = JButton("Load Snippet").apply {
-            addActionListener {
-                val selected = snippetList.selectedValue ?: return@addActionListener
-                titleField.text = selected.title
-                snippetContentEditor.text = selected.content
-            }
-        }
-
-        return JPanel(BorderLayout()).apply {
-            add(JScrollPane(snippetList), BorderLayout.CENTER)
-            add(openButton, BorderLayout.SOUTH)
         }
     }
 

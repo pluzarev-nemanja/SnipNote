@@ -26,7 +26,8 @@ class SnippetService : PersistentStateComponent<SnippetService.State> {
     override fun getState(): SnippetService.State = myState
 
     override fun loadState(state: SnippetService.State) {
-        XmlSerializerUtil.copyBean(state, myState)
+        println("LOADED SNIPPETS: ${state.snippets}")
+        XmlSerializerUtil.copyBean(state, this.myState)
     }
 
     fun addSnippet(snippet: Snippet) {

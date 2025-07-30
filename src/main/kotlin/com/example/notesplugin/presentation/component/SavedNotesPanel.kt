@@ -4,8 +4,7 @@ import com.example.notesplugin.domain.model.Snippet
 import com.example.notesplugin.presentation.renderer.SnippetCardRenderer
 import com.example.notesplugin.service.SnippetService
 import com.intellij.openapi.project.Project
-import java.awt.BorderLayout
-import java.awt.CardLayout
+import java.awt.*
 import javax.swing.*
 
 class SavedNotesPanel(
@@ -14,34 +13,55 @@ class SavedNotesPanel(
 ) : JPanel(BorderLayout()) {
 
     private val listModel = DefaultListModel<Snippet>()
+
     private val snippetList = JList(listModel).apply {
+        selectionMode = ListSelectionModel.SINGLE_SELECTION
+        visibleRowCount = -1
+        fixedCellHeight = -1
         cellRenderer = SnippetCardRenderer(project) { snippet ->
+            clearSelection()
             onSnippetSelected(snippet)
         }
     }
+
     private val emptyLabel = JLabel("📭 No snippets saved yet.").apply {
-        horizontalAlignment = JLabel.CENTER
-        verticalAlignment = JLabel.CENTER
+        horizontalAlignment = SwingConstants.CENTER
+        verticalAlignment = SwingConstants.CENTER
+        font = Font("Segoe UI", Font.PLAIN, 14)
     }
-    private val listScrollPane = JScrollPane(snippetList)
+
+    private val scrollPane = JScrollPane(snippetList).apply {
+        border = BorderFactory.createEmptyBorder()
+        verticalScrollBar.unitIncrement = 16
+    }
+
     private val cardLayout = CardLayout()
-    private val container = JPanel(cardLayout)
+    private val container = JPanel(cardLayout).apply {
+        add(emptyLabel, "empty")
+        add(scrollPane, "list")
+    }
 
     init {
-        container.add(emptyLabel, "empty")
-        container.add(listScrollPane, "list")
         add(container, BorderLayout.CENTER)
     }
 
     fun refreshList() {
         val snippets = SnippetService.getInstance(project).state.snippets
-
-        if (snippets.isEmpty()) {
+        if (snippets.isNullOrEmpty()) {
+            listModel.clear()
             cardLayout.show(container, "empty")
         } else {
             listModel.clear()
             snippets.forEach { listModel.addElement(it) }
             cardLayout.show(container, "list")
         }
+
+        revalidate()
+        repaint()
+    }
+
+    override fun addNotify() {
+        super.addNotify()
+        refreshList()
     }
 }

@@ -4,8 +4,12 @@ import com.intellij.ui.JBColor
 import java.awt.Color
 
 data class Snippet(
-    val title: String = "",
-    val content: String = "",
-    val languageName: String = "",
-    val languageColor: Color = JBColor.GRAY
-)
+    var title: String = "",
+    var content: String = "",
+    var languageName: String = "",
+    var languageColor: String = "#888888"
+) {
+    companion object {
+        fun getColor(languageColor: String): Color = Color.decode(languageColor)
+    }
+}
