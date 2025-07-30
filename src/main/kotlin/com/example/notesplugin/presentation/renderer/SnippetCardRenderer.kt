@@ -11,28 +11,32 @@ import com.intellij.ui.JBColor
 import com.intellij.util.ui.JBUI
 import java.awt.*
 import javax.swing.*
+import javax.swing.border.LineBorder
 
 class SnippetCardRenderer(
     project: Project,
     private val onEditClick: (Snippet) -> Unit
 ) : ListCellRenderer<Snippet> {
 
-    private var snippetContentEditor: EditorTextField = EditorTextField(
+    private val snippetContentEditor: EditorTextField = EditorTextField(
         "",
         project,
-        FileTypeManager.getInstance().getFileTypeByExtension(CodeLanguage.KOTLIN.fileExtension)
+        FileTypeManager.getInstance()
+            .getFileTypeByExtension(CodeLanguage.KOTLIN.fileExtension)
     ).apply {
         addSettingsProvider { editor ->
             editor.isOneLineMode = false
-            editor.setCaretEnabled(true)
+            editor.setCaretEnabled(false)
             editor.colorsScheme = EditorColorsManager.getInstance().globalScheme
             editor.settings.apply {
-                isLineNumbersShown = true
-                isFoldingOutlineShown = true
+                isLineNumbersShown = false
+                isFoldingOutlineShown = false
                 isUseSoftWraps = true
-                isViewer = false
+                isViewer = true
             }
+            background = JBColor.PanelBackground
         }
+        isEnabled = false
     }
 
     override fun getListCellRendererComponent(
@@ -42,56 +46,61 @@ class SnippetCardRenderer(
         isSelected: Boolean,
         cellHasFocus: Boolean
     ): Component {
-        val panel = JPanel(BorderLayout()).apply {
-            border = JBUI.Borders.empty(8)
-            background = if (isSelected) JBColor.LIGHT_GRAY else JBColor.WHITE
-        }
-
-        val headerPanel = JPanel(BorderLayout()).apply {
-            background = panel.background
+        val panel = JPanel(BorderLayout(0, 6)).apply {
+            border = JBUI.Borders.empty(10, 12)
+            background = if (isSelected) JBColor(0xF0F6FF, 0x2B2B2B) else JBColor.WHITE
         }
 
         val titleLabel = JLabel(value.title).apply {
-            font = Font("Segoe UI", Font.BOLD, 14)
+            font = Font("Segoe UI", Font.BOLD, 15)
+            foreground = if (isSelected) JBColor(0x1D4ED8, 0xA5D6FF) else JBColor(0x111827, 0xE5E7EB)
         }
 
         val languageLabel = RoundedLabel().apply {
             text = value.languageName
-            background = value.languageColor
+            background = Snippet.getColor(value.languageColor)
             foreground = Color.WHITE
-            font = Font("Segoe UI", Font.PLAIN, 12)
+            font = Font("Segoe UI", Font.PLAIN, 11)
             horizontalAlignment = SwingConstants.CENTER
+            border = JBUI.Borders.empty(2, 6)
         }
 
-        val editButton = JButton("Edit").apply {
+        val editButton = JButton("✏ Edit").apply {
             font = Font("Segoe UI", Font.PLAIN, 12)
+            background = JBColor(0xE5E7EB, 0x3C3F41)
+            border = LineBorder(JBColor(0xD1D5DB, 0x555555))
             preferredSize = Dimension(80, 28)
+            isFocusPainted = false
             addActionListener { onEditClick(value) }
         }
 
-        val rightPanel = JPanel(FlowLayout(FlowLayout.RIGHT, 6, 0)).apply {
+        val rightPanel = JPanel(FlowLayout(FlowLayout.RIGHT, 8, 0)).apply {
             background = panel.background
             add(languageLabel)
             add(editButton)
         }
 
-        headerPanel.add(titleLabel, BorderLayout.WEST)
-        headerPanel.add(rightPanel, BorderLayout.EAST)
-
-        val descriptionArea = JTextArea().apply {
-            text = value.content
-            font = Font("Segoe UI", Font.PLAIN, 12)
-            lineWrap = true
-            wrapStyleWord = true
-            rows = 8
-            isEditable = false
-            isFocusable = false
-            border = null
+        val headerPanel = JPanel(BorderLayout()).apply {
             background = panel.background
+            add(titleLabel, BorderLayout.WEST)
+            add(rightPanel, BorderLayout.EAST)
         }
 
+        snippetContentEditor.text = value.content.lines().take(4).joinToString("\n") +
+                if (value.content.lines().size > 4) "\n..." else ""
+
+        snippetContentEditor.border = JBUI.Borders.empty(4)
+        snippetContentEditor.isOpaque = true
+
         panel.add(headerPanel, BorderLayout.NORTH)
-        panel.add(descriptionArea, BorderLayout.CENTER)
+        panel.add(snippetContentEditor, BorderLayout.CENTER)
+
+        panel.border = BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(
+                if (isSelected) JBColor(0x1D4ED8, 0x4A90E2) else JBColor(0xE5E7EB, 0x555555), 1
+            ),
+            JBUI.Borders.empty(8)
+        )
 
         return panel
     }
