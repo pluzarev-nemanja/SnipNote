@@ -18,7 +18,7 @@ class SavedNotesPanel(
         selectionMode = ListSelectionModel.SINGLE_SELECTION
         visibleRowCount = -1
         fixedCellHeight = -1
-        cellRenderer = SnippetCardRenderer(project) { snippet ->
+        cellRenderer = SnippetCardRenderer { snippet ->
             clearSelection()
             onSnippetSelected(snippet)
         }
@@ -47,7 +47,7 @@ class SavedNotesPanel(
 
     fun refreshList() {
         val snippets = SnippetService.getInstance(project).state.snippets
-        if (snippets.isNullOrEmpty()) {
+        if (snippets.isEmpty()) {
             listModel.clear()
             cardLayout.show(container, "empty")
         } else {

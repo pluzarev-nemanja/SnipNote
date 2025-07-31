@@ -2,11 +2,7 @@ package com.example.notesplugin.presentation.renderer
 
 import com.example.notesplugin.domain.model.Snippet
 import com.example.notesplugin.presentation.component.RoundedLabel
-import com.example.notesplugin.presentation.util.CodeLanguage
-import com.intellij.openapi.editor.colors.EditorColorsManager
-import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.project.Project
-import com.intellij.ui.EditorTextField
 import com.intellij.ui.JBColor
 import com.intellij.util.ui.JBUI
 import java.awt.*
@@ -14,30 +10,8 @@ import javax.swing.*
 import javax.swing.border.LineBorder
 
 class SnippetCardRenderer(
-    project: Project,
     private val onEditClick: (Snippet) -> Unit
 ) : ListCellRenderer<Snippet> {
-
-    private val snippetContentEditor: EditorTextField = EditorTextField(
-        "",
-        project,
-        FileTypeManager.getInstance()
-            .getFileTypeByExtension(CodeLanguage.KOTLIN.fileExtension)
-    ).apply {
-        addSettingsProvider { editor ->
-            editor.isOneLineMode = false
-            editor.setCaretEnabled(false)
-            editor.colorsScheme = EditorColorsManager.getInstance().globalScheme
-            editor.settings.apply {
-                isLineNumbersShown = false
-                isFoldingOutlineShown = false
-                isUseSoftWraps = true
-                isViewer = true
-            }
-            background = JBColor.PanelBackground
-        }
-        isEnabled = false
-    }
 
     override fun getListCellRendererComponent(
         list: JList<out Snippet>,
@@ -53,7 +27,7 @@ class SnippetCardRenderer(
 
         val titleLabel = JLabel(value.title).apply {
             font = Font("Segoe UI", Font.BOLD, 15)
-            foreground = if (isSelected) JBColor(0x1D4ED8, 0xA5D6FF) else JBColor(0x111827, 0xE5E7EB)
+            foreground = if (isSelected) Snippet.getColor(value.languageColor) else JBColor(0x111827, 0xE5E7EB)
         }
 
         val languageLabel = RoundedLabel().apply {
@@ -74,6 +48,16 @@ class SnippetCardRenderer(
             addActionListener { onEditClick(value) }
         }
 
+        val codePreview = JTextArea().apply {
+            isEditable = false
+            isOpaque = true
+            font = Font("Monospaced", Font.ITALIC, 12)
+            lineWrap = true
+            wrapStyleWord = true
+            background = if (isSelected) JBColor(0xF0F6FF, 0x2B2B2B) else JBColor.WHITE
+            border = JBUI.Borders.empty(4)
+        }
+
         val rightPanel = JPanel(FlowLayout(FlowLayout.RIGHT, 8, 0)).apply {
             background = panel.background
             add(languageLabel)
@@ -86,22 +70,25 @@ class SnippetCardRenderer(
             add(rightPanel, BorderLayout.EAST)
         }
 
-        snippetContentEditor.text = value.content.lines().take(4).joinToString("\n") +
-                if (value.content.lines().size > 4) "\n..." else ""
-
-        snippetContentEditor.border = JBUI.Borders.empty(4)
-        snippetContentEditor.isOpaque = true
+        codePreview.text = formatQuotedPreview(value)
 
         panel.add(headerPanel, BorderLayout.NORTH)
-        panel.add(snippetContentEditor, BorderLayout.CENTER)
+        panel.add(codePreview, BorderLayout.CENTER)
 
         panel.border = BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(
-                if (isSelected) JBColor(0x1D4ED8, 0x4A90E2) else JBColor(0xE5E7EB, 0x555555), 1
+                if (isSelected) Snippet.getColor(value.languageColor) else JBColor(0xE5E7EB, 0x555555), 1
             ),
             JBUI.Borders.empty(8)
         )
 
         return panel
+    }
+
+    private fun formatQuotedPreview(snippet: Snippet, maxLines: Int = 4): String {
+        val lines = snippet.content.lines()
+        val preview = lines.take(maxLines).joinToString("\n")
+        val isTruncated = lines.size > maxLines
+        return "“$preview${if (isTruncated) "\n..." else ""}”"
     }
 }
