@@ -1,6 +1,7 @@
 package com.example.notesplugin.presentation.component
 
 import com.example.notesplugin.domain.model.Snippet
+import com.example.notesplugin.facade.SnippetLabelFacade
 import com.example.notesplugin.presentation.controller.SnippetListController
 import com.example.notesplugin.presentation.renderer.SnippetCardRenderer
 import com.example.notesplugin.presentation.util.CodeLanguage
@@ -17,7 +18,7 @@ import java.awt.event.MouseEvent
 import javax.swing.*
 
 class SavedNotesPanel(
-    private val project: Project,
+    private val facade: SnippetLabelFacade,
     private val onEditSnippet: (Snippet) -> Unit
 ) : JPanel(BorderLayout()) {
 
@@ -69,7 +70,7 @@ class SavedNotesPanel(
 
         val rightPanel = JPanel()
         rightPanel.layout = BoxLayout(rightPanel, BoxLayout.Y_AXIS)
-        rightPanel.border = BorderFactory.createEmptyBorder(0, 10, 0, 0) // spacing between search and combo
+        rightPanel.border = BorderFactory.createEmptyBorder(0, 10, 0, 0)
         languageComboBox.maximumSize = Dimension(150, languageComboBox.preferredSize.height)
         rightPanel.add(languageComboBox)
 
@@ -132,7 +133,7 @@ class SavedNotesPanel(
     }
 
     fun refreshList() {
-        val snippets = SnippetService.getInstance(project).state.snippets
+        val snippets = facade.getAllSnippets()
         controller.setSnippets(snippets)
         applyFilter()
         revalidate()

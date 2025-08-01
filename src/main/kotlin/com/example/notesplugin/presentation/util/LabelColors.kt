@@ -1,0 +1,36 @@
+package com.example.notesplugin.presentation.util
+
+import com.intellij.ui.JBColor
+
+object LabelColors {
+    val Purple = JBColor(0x7F52FF, 0x9B6BFF)
+    val Orange = JBColor(0xF89820, 0xFFB347)
+    val Blue = JBColor(0x3776AB, 0x6C8CD5)
+    val Yellow = JBColor(0xF7DF1E, 0xFCE87C)
+    val BlueDark = JBColor(0x3178C6, 0x6FA6FF)
+    val Red = JBColor(0xE44D26, 0xF07154)
+    val BlueBright = JBColor(0x264DE4, 0x4A6CF7)
+    val Pink = JBColor(0xCC6699, 0xE58EBF)
+    val DarkGray = JBColor(0x292929, 0x5A5A5A)
+    val BlueMedium = JBColor(0x0060AC, 0x3B7DC1)
+    val YellowBright = JBColor(0xFFCD00, 0xFFE066)
+    val DarkBlue = JBColor(0x083FA1, 0x3B5DBB)
+    val OrangeBright = JBColor(0xF29111, 0xFFB347)
+    val Green = JBColor(0x4EAA25, 0x79C95A)
+    val LightBlueGray = JBColor(0xA8B9CC, 0xC4D0E8)
+    val BlueDeep = JBColor(0x00599C, 0x4C92C9)
+    val GreenDark = JBColor(0x239120, 0x4EB94D)
+    val Tan = JBColor(0xDEA584, 0xD7A06F)
+    val Cyan = JBColor(0x00ADD8, 0x4CC3D9)
+    val RedDark = JBColor(0xCC342D, 0xE57373)
+    val BlueGray = JBColor(0x8993BE, 0xB3BCE6)
+    val OrangeSoft = JBColor(0xFA7343, 0xFF9B7A)
+    val BlueLight = JBColor(0x438EFF, 0x7FA9FF)
+    val BlueMuted = JBColor(0x39457E, 0x6473B9)
+    val Navy = JBColor(0x000080, 0x5050A5)
+    val BlueSky = JBColor(0x4298B8, 0x7EBFD3)
+    val Aqua = JBColor(0x00B4AB, 0x5CE0DD)
+    val PurpleGray = JBColor(0x5E5086, 0x8A7FC8)
+    val RedBright = JBColor(0xDC322F, 0xE57373)
+    val BlueStrong = JBColor(0x276DC3, 0x6496F5)
+}

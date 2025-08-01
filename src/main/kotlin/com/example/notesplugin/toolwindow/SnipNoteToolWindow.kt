@@ -1,6 +1,7 @@
 package com.example.notesplugin.toolwindow
 
 import com.example.notesplugin.domain.model.Snippet
+import com.example.notesplugin.facade.SnippetLabelFacade
 import com.example.notesplugin.presentation.component.SavedNotesPanel
 import com.example.notesplugin.presentation.util.CodeLanguage
 import com.example.notesplugin.presentation.util.CodeLanguageColors
@@ -38,8 +39,7 @@ import javax.swing.*
 
 class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(true, true) {
 
-    private val snippetService = project.getService(SnippetService::class.java)
-
+    private val facade = SnippetLabelFacade(project)
     private lateinit var snippetContentEditor: EditorTextField
     private val titleField = JBTextField()
     private val panel = JBPanel<JBPanel<*>>(BorderLayout())
@@ -123,7 +123,7 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
         val tabs = JTabbedPane()
         tabs.addTab(PanelTabs.EDITOR.title, AllIcons.Actions.Commit, panel)
 
-        savedNotesPanel = SavedNotesPanel(project) { snippet ->
+        savedNotesPanel = SavedNotesPanel(facade) { snippet ->
             tabs.selectedIndex = PanelTabs.EDITOR.ordinal
             updateEditorTab(snippet)
         }
@@ -165,7 +165,7 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
                 return@addActionListener
             }
             val selectedLanguage = languageComboBox.selectedItem as? CodeLanguage
-            snippetService.addSnippet(
+            facade.addSnippet(
                 Snippet(
                     title = title,
                     content = snippetContentEditor.text,
