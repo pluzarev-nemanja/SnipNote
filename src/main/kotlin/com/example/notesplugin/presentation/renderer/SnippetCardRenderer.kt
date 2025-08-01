@@ -3,15 +3,14 @@ package com.example.notesplugin.presentation.renderer
 import com.example.notesplugin.domain.model.Snippet
 import com.example.notesplugin.presentation.component.RoundedLabel
 import com.intellij.openapi.project.Project
+import com.intellij.ui.Gray
 import com.intellij.ui.JBColor
 import com.intellij.util.ui.JBUI
 import java.awt.*
 import javax.swing.*
 import javax.swing.border.LineBorder
 
-class SnippetCardRenderer(
-    private val onEditClick: (Snippet) -> Unit
-) : ListCellRenderer<Snippet> {
+class SnippetCardRenderer() : ListCellRenderer<Snippet> {
 
     override fun getListCellRendererComponent(
         list: JList<out Snippet>,
@@ -39,15 +38,15 @@ class SnippetCardRenderer(
             border = JBUI.Borders.empty(2, 6)
         }
 
-        val editButton = JButton("✏ Edit").apply {
-            font = Font("Segoe UI", Font.PLAIN, 12)
-            background = JBColor(0xE5E7EB, 0x3C3F41)
-            border = LineBorder(JBColor(0xD1D5DB, 0x555555))
-            preferredSize = Dimension(80, 28)
+        val editButton = JButton().apply {
+            icon = com.intellij.icons.AllIcons.General.Inline_edit
+            isContentAreaFilled = false
+            isBorderPainted = false
             isFocusPainted = false
-            addActionListener { onEditClick(value) }
+            background = panel.background
+            preferredSize = Dimension(28, 28)
+            toolTipText = "Edit"
         }
-
         val codePreview = JTextArea().apply {
             isEditable = false
             isOpaque = true
@@ -55,6 +54,7 @@ class SnippetCardRenderer(
             lineWrap = true
             wrapStyleWord = true
             background = if (isSelected) JBColor(0xF0F6FF, 0x2B2B2B) else JBColor.WHITE
+            foreground = JBColor(Gray._100, Gray._160)
             border = JBUI.Borders.empty(4)
         }
 

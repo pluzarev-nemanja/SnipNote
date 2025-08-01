@@ -124,9 +124,8 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
         tabs.addTab(PanelTabs.EDITOR.title, AllIcons.Actions.Commit, panel)
 
         savedNotesPanel = SavedNotesPanel(project) { snippet ->
-            titleField.text = snippet.title
-            snippetContentEditor.text = snippet.content
             tabs.selectedIndex = PanelTabs.EDITOR.ordinal
+            updateEditorTab(snippet)
         }
         tabs.addTab(PanelTabs.SAVED_NOTES.title, AllIcons.Actions.MenuPaste, savedNotesPanel)
 
@@ -137,6 +136,16 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
         }
 
         setContent(tabs)
+    }
+
+    private fun updateEditorTab(snippet: Snippet) {
+        titleField.text = snippet.title
+        snippetContentEditor.text = snippet.content
+        CodeLanguage.entries.find { it.displayName == snippet.languageName }?.let {
+            languageComboBox.selectedItem = it
+            updateEditorHighlighter(it)
+        }
+        saveButton.text = "Update"
     }
 
     private fun initListeners() {
@@ -213,10 +222,12 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
 
     private fun updateEditorHighlighter(language: CodeLanguage) {
         val fileType = FileTypeManager.getInstance().getFileTypeByExtension(language.fileExtension)
-        val highlighter = EditorHighlighterFactory.getInstance()
+        val editorHighlighter = EditorHighlighterFactory.getInstance()
             .createEditorHighlighter(project, fileType)
 
-        (snippetContentEditor.editor as? EditorEx)?.highlighter = highlighter
+        (snippetContentEditor.editor as? EditorEx)?.apply {
+            highlighter = editorHighlighter
+        } ?: println("⚠️ No syntax highlighter found for: ${language.fileExtension}. Falling back to plain text.")
     }
 
     fun detectProjectPrimaryLanguage(project: Project): CodeLanguage {
@@ -229,7 +240,7 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
             }
         }
         val fileTypeCount = allFiles
-            .mapNotNull { it.fileType }
+            .map { it.fileType }
             .groupingBy { it }
             .eachCount()
 
@@ -238,7 +249,7 @@ class SnipNoteToolWindow(private val project: Project) : SimpleToolWindowPanel(t
             .maxByOrNull { it.value }
             ?.key ?: return CodeLanguage.KOTLIN
 
-        return CodeLanguage.values().find {
+        return CodeLanguage.entries.find {
             fileTypeManager.getFileTypeByExtension(it.fileExtension) == mostUsedFileType
         } ?: CodeLanguage.KOTLIN
     }

@@ -5,11 +5,13 @@ import com.example.notesplugin.presentation.renderer.SnippetCardRenderer
 import com.example.notesplugin.service.SnippetService
 import com.intellij.openapi.project.Project
 import java.awt.*
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import javax.swing.*
 
 class SavedNotesPanel(
     private val project: Project,
-    private val onSnippetSelected: (Snippet) -> Unit
+    private val onEditSnippet: (Snippet) -> Unit
 ) : JPanel(BorderLayout()) {
 
     private val listModel = DefaultListModel<Snippet>()
@@ -18,10 +20,7 @@ class SavedNotesPanel(
         selectionMode = ListSelectionModel.SINGLE_SELECTION
         visibleRowCount = -1
         fixedCellHeight = -1
-        cellRenderer = SnippetCardRenderer { snippet ->
-            clearSelection()
-            onSnippetSelected(snippet)
-        }
+        cellRenderer = SnippetCardRenderer()
     }
 
     private val emptyLabel = JLabel("📭 No snippets saved yet.").apply {
@@ -43,6 +42,17 @@ class SavedNotesPanel(
 
     init {
         add(container, BorderLayout.CENTER)
+        snippetList.addMouseListener(object : MouseAdapter() {
+            override fun mouseClicked(e: MouseEvent) {
+                if (e.clickCount == 2 && !e.isConsumed) {
+                    e.consume()
+                    val selectedSnippet = snippetList.selectedValue
+                    if (selectedSnippet != null) {
+                        onEditSnippet(selectedSnippet)
+                    }
+                }
+            }
+        })
     }
 
     fun refreshList() {
