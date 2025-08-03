@@ -1,5 +1,5 @@
 <idea-plugin>
-    <id>com.example.NotesPlugin</id>
+    <id>com.nemanjapluzarev.NotesPlugin</id>
 
     <name>SnipNote</name>
 
